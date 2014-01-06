@@ -253,6 +253,18 @@ object PicklingJsonSpec extends Properties("pickling-json") {
     readArr.sameElements(ia)
   })
 
+  property("Array[(Int, Double)]") = forAll((ia: Array[(Int, Double)]) => {
+    val pickle: JSONPickle = ia.pickle
+    val readArr = pickle.unpickle[Array[(Int, Double)]]
+    readArr.sameElements(ia)
+  })
+
+  property("Array[(String, Int)]") = forAll((ia: Array[(String, Int)]) => {
+    val pickle: JSONPickle = ia.pickle
+    val readArr = pickle.unpickle[Array[(String, Int)]]
+    readArr.sameElements(ia)
+  })
+
   property("BigDecimal") = Prop forAll { (x: Double) =>
     val bd = new BigDecimal(x)
     val pickle: JSONPickle = bd.pickle
