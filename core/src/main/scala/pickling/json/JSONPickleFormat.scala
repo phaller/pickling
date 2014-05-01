@@ -55,8 +55,8 @@ package json {
       append(s + "\n")
       pendingIndent = true
     }
-    private val tags = new Stack[FastTypeTag[_]]()
-    private def pickleArray(arr: Array[_], tag: FastTypeTag[_]) = {
+    private val tags = new Stack[StaticTypeTag[_]]()
+    private def pickleArray(arr: Array[_], tag: StaticTypeTag[_]) = {
       unindent()
       appendLine("[")
       hintStaticallyElidedType()
@@ -73,31 +73,31 @@ package json {
       indent()
     }
     private val primitives = Map[String, Any => Unit](
-      FastTypeTag.Null.key -> ((picklee: Any) => append("null")),
-      FastTypeTag.Ref.key -> ((picklee: Any) => throw new Error("fatal error: shouldn't be invoked explicitly")),
-      FastTypeTag.Int.key -> ((picklee: Any) => append(picklee.toString)),
-      FastTypeTag.Long.key -> ((picklee: Any) => append("\"" + JSONFormat.quoteString(picklee.toString) + "\"")),
-      FastTypeTag.Short.key -> ((picklee: Any) => append(picklee.toString)),
-      FastTypeTag.Double.key -> ((picklee: Any) => append(picklee.toString)),
-      FastTypeTag.Float.key -> ((picklee: Any) => append(picklee.toString)),
-      FastTypeTag.Boolean.key -> ((picklee: Any) => append(picklee.toString)),
-      FastTypeTag.Byte.key -> ((picklee: Any) => append(picklee.toString)),
-      FastTypeTag.Char.key -> ((picklee: Any) => append("\"" + JSONFormat.quoteString(picklee.toString) + "\"")),
-      FastTypeTag.ScalaString.key -> ((picklee: Any) => append("\"" + JSONFormat.quoteString(picklee.toString) + "\"")),
-      FastTypeTag.JavaString.key -> ((picklee: Any) => append("\"" + JSONFormat.quoteString(picklee.toString) + "\"")),
-      FastTypeTag.ArrayByte.key -> ((picklee: Any) => pickleArray(picklee.asInstanceOf[Array[Byte]], FastTypeTag.Byte)),
-      FastTypeTag.ArrayShort.key -> ((picklee: Any) => pickleArray(picklee.asInstanceOf[Array[Short]], FastTypeTag.Short)),
-      FastTypeTag.ArrayChar.key -> ((picklee: Any) => pickleArray(picklee.asInstanceOf[Array[Char]], FastTypeTag.Char)),
-      FastTypeTag.ArrayInt.key -> ((picklee: Any) => pickleArray(picklee.asInstanceOf[Array[Int]], FastTypeTag.Int)),
-      FastTypeTag.ArrayLong.key -> ((picklee: Any) => pickleArray(picklee.asInstanceOf[Array[Long]], FastTypeTag.Long)),
-      FastTypeTag.ArrayBoolean.key -> ((picklee: Any) => pickleArray(picklee.asInstanceOf[Array[Boolean]], FastTypeTag.Boolean)),
-      FastTypeTag.ArrayFloat.key -> ((picklee: Any) => pickleArray(picklee.asInstanceOf[Array[Float]], FastTypeTag.Float)),
-      FastTypeTag.ArrayDouble.key -> ((picklee: Any) => pickleArray(picklee.asInstanceOf[Array[Double]], FastTypeTag.Double))
+      StaticTypeTag.Null.key -> ((picklee: Any) => append("null")),
+      StaticTypeTag.Ref.key -> ((picklee: Any) => throw new Error("fatal error: shouldn't be invoked explicitly")),
+      StaticTypeTag.Int.key -> ((picklee: Any) => append(picklee.toString)),
+      StaticTypeTag.Long.key -> ((picklee: Any) => append("\"" + JSONFormat.quoteString(picklee.toString) + "\"")),
+      StaticTypeTag.Short.key -> ((picklee: Any) => append(picklee.toString)),
+      StaticTypeTag.Double.key -> ((picklee: Any) => append(picklee.toString)),
+      StaticTypeTag.Float.key -> ((picklee: Any) => append(picklee.toString)),
+      StaticTypeTag.Boolean.key -> ((picklee: Any) => append(picklee.toString)),
+      StaticTypeTag.Byte.key -> ((picklee: Any) => append(picklee.toString)),
+      StaticTypeTag.Char.key -> ((picklee: Any) => append("\"" + JSONFormat.quoteString(picklee.toString) + "\"")),
+      StaticTypeTag.ScalaString.key -> ((picklee: Any) => append("\"" + JSONFormat.quoteString(picklee.toString) + "\"")),
+      StaticTypeTag.JavaString.key -> ((picklee: Any) => append("\"" + JSONFormat.quoteString(picklee.toString) + "\"")),
+      StaticTypeTag.ArrayByte.key -> ((picklee: Any) => pickleArray(picklee.asInstanceOf[Array[Byte]], StaticTypeTag.Byte)),
+      StaticTypeTag.ArrayShort.key -> ((picklee: Any) => pickleArray(picklee.asInstanceOf[Array[Short]], StaticTypeTag.Short)),
+      StaticTypeTag.ArrayChar.key -> ((picklee: Any) => pickleArray(picklee.asInstanceOf[Array[Char]], StaticTypeTag.Char)),
+      StaticTypeTag.ArrayInt.key -> ((picklee: Any) => pickleArray(picklee.asInstanceOf[Array[Int]], StaticTypeTag.Int)),
+      StaticTypeTag.ArrayLong.key -> ((picklee: Any) => pickleArray(picklee.asInstanceOf[Array[Long]], StaticTypeTag.Long)),
+      StaticTypeTag.ArrayBoolean.key -> ((picklee: Any) => pickleArray(picklee.asInstanceOf[Array[Boolean]], StaticTypeTag.Boolean)),
+      StaticTypeTag.ArrayFloat.key -> ((picklee: Any) => pickleArray(picklee.asInstanceOf[Array[Float]], StaticTypeTag.Float)),
+      StaticTypeTag.ArrayDouble.key -> ((picklee: Any) => pickleArray(picklee.asInstanceOf[Array[Double]], StaticTypeTag.Double))
     )
     def beginEntry(picklee: Any): PBuilder = withHints { hints =>
       indent()
       if (hints.oid != -1) {
-        tags.push(FastTypeTag.Ref)
+        tags.push(StaticTypeTag.Ref)
         append("{ \"$ref\": " + hints.oid + " }")
       } else {
         tags.push(hints.tag)
@@ -105,7 +105,7 @@ package json {
           if (hints.isElidedType) primitives(hints.tag.key)(picklee)
           else {
             appendLine("{")
-            appendLine("\"tpe\": \"" + typeToString(hints.tag.tpe) + "\",")
+            appendLine("\"tpe\": \"" + /*typeToString(hints.tag.tpe)*/hints.tag.key + "\",")
             append("\"value\": ")
             indent()
             primitives(hints.tag.key)(picklee)
@@ -117,7 +117,7 @@ package json {
           }
         } else {
           appendLine("{")
-          if (!hints.isElidedType) append("\"tpe\": \"" + typeToString(hints.tag.tpe) + "\"")
+          if (!hints.isElidedType) append("\"tpe\": \"" + /*typeToString(hints.tag.tpe)*/hints.tag.key + "\"")
         }
       }
       this
@@ -157,28 +157,28 @@ package json {
   }
 
   class JSONPickleReader(var datum: Any, val mirror: Mirror, format: JSONPickleFormat) extends PReader with PickleTools {
-    private var lastReadTag: FastTypeTag[_] = null
+    private var lastReadTag: StaticTypeTag[_] = null
     private val primitives = Map[String, () => Any](
-      FastTypeTag.Null.key -> (() => null),
-      FastTypeTag.Ref.key -> (() => lookupUnpicklee(datum.asInstanceOf[JSONObject].obj("$ref").asInstanceOf[Double].toInt)),
-      FastTypeTag.Int.key -> (() => datum.asInstanceOf[Double].toInt),
-      FastTypeTag.Short.key -> (() => datum.asInstanceOf[Double].toShort),
-      FastTypeTag.Double.key -> (() => datum.asInstanceOf[Double]),
-      FastTypeTag.Float.key -> (() => datum.asInstanceOf[Double].toFloat),
-      FastTypeTag.Long.key -> (() => datum.asInstanceOf[String].toLong),
-      FastTypeTag.Byte.key -> (() => datum.asInstanceOf[Double].toByte),
-      FastTypeTag.Boolean.key -> (() => datum.asInstanceOf[Boolean]),
-      FastTypeTag.Char.key -> (() => datum.asInstanceOf[String].head),
-      FastTypeTag.ScalaString.key -> (() => datum.asInstanceOf[String]),
-      FastTypeTag.JavaString.key -> (() => datum.asInstanceOf[String]),
-      FastTypeTag.ArrayByte.key -> (() => datum.asInstanceOf[JSONArray].list.map(el => el.asInstanceOf[Double].toByte).toArray),
-      FastTypeTag.ArrayShort.key -> (() => datum.asInstanceOf[JSONArray].list.map(el => el.asInstanceOf[Double].toShort).toArray),
-      FastTypeTag.ArrayChar.key -> (() => datum.asInstanceOf[JSONArray].list.map(el => el.asInstanceOf[String].head).toArray),
-      FastTypeTag.ArrayInt.key -> (() => datum.asInstanceOf[JSONArray].list.map(el => el.asInstanceOf[Double].toInt).toArray),
-      FastTypeTag.ArrayLong.key -> (() => datum.asInstanceOf[JSONArray].list.map(el => el.asInstanceOf[String].toLong).toArray),
-      FastTypeTag.ArrayBoolean.key -> (() => datum.asInstanceOf[JSONArray].list.map(el => el.asInstanceOf[Boolean]).toArray),
-      FastTypeTag.ArrayFloat.key -> (() => datum.asInstanceOf[JSONArray].list.map(el => el.asInstanceOf[Double].toFloat).toArray),
-      FastTypeTag.ArrayDouble.key -> (() => datum.asInstanceOf[JSONArray].list.map(el => el.asInstanceOf[Double]).toArray)
+      StaticTypeTag.Null.key -> (() => null),
+      StaticTypeTag.Ref.key -> (() => lookupUnpicklee(datum.asInstanceOf[JSONObject].obj("$ref").asInstanceOf[Double].toInt)),
+      StaticTypeTag.Int.key -> (() => datum.asInstanceOf[Double].toInt),
+      StaticTypeTag.Short.key -> (() => datum.asInstanceOf[Double].toShort),
+      StaticTypeTag.Double.key -> (() => datum.asInstanceOf[Double]),
+      StaticTypeTag.Float.key -> (() => datum.asInstanceOf[Double].toFloat),
+      StaticTypeTag.Long.key -> (() => datum.asInstanceOf[String].toLong),
+      StaticTypeTag.Byte.key -> (() => datum.asInstanceOf[Double].toByte),
+      StaticTypeTag.Boolean.key -> (() => datum.asInstanceOf[Boolean]),
+      StaticTypeTag.Char.key -> (() => datum.asInstanceOf[String].head),
+      StaticTypeTag.ScalaString.key -> (() => datum.asInstanceOf[String]),
+      StaticTypeTag.JavaString.key -> (() => datum.asInstanceOf[String]),
+      StaticTypeTag.ArrayByte.key -> (() => datum.asInstanceOf[JSONArray].list.map(el => el.asInstanceOf[Double].toByte).toArray),
+      StaticTypeTag.ArrayShort.key -> (() => datum.asInstanceOf[JSONArray].list.map(el => el.asInstanceOf[Double].toShort).toArray),
+      StaticTypeTag.ArrayChar.key -> (() => datum.asInstanceOf[JSONArray].list.map(el => el.asInstanceOf[String].head).toArray),
+      StaticTypeTag.ArrayInt.key -> (() => datum.asInstanceOf[JSONArray].list.map(el => el.asInstanceOf[Double].toInt).toArray),
+      StaticTypeTag.ArrayLong.key -> (() => datum.asInstanceOf[JSONArray].list.map(el => el.asInstanceOf[String].toLong).toArray),
+      StaticTypeTag.ArrayBoolean.key -> (() => datum.asInstanceOf[JSONArray].list.map(el => el.asInstanceOf[Boolean]).toArray),
+      StaticTypeTag.ArrayFloat.key -> (() => datum.asInstanceOf[JSONArray].list.map(el => el.asInstanceOf[Double].toFloat).toArray),
+      StaticTypeTag.ArrayDouble.key -> (() => datum.asInstanceOf[JSONArray].list.map(el => el.asInstanceOf[Double]).toArray)
     )
     private def mkNestedReader(datum: Any) = {
       val nested = new JSONPickleReader(datum, mirror, format)
@@ -190,18 +190,18 @@ package json {
       nested
     }
     def beginEntryNoTag(): String = beginEntry().key
-    def beginEntry(): FastTypeTag[_] = withHints { hints =>
+    def beginEntry(): StaticTypeTag[_] = withHints { hints =>
       lastReadTag = {
-        if (datum == null) FastTypeTag.Null
+        if (datum == null) StaticTypeTag.Null
         else if (hints.isElidedType) {
           datum match {
-            case JSONObject(fields) if fields.contains("$ref") => FastTypeTag.Ref
+            case JSONObject(fields) if fields.contains("$ref") => StaticTypeTag.Ref
             case _ => hints.tag
           }
         } else {
           datum match {
-            case JSONObject(fields) if fields.contains("$ref") => FastTypeTag.Ref
-            case JSONObject(fields) if fields.contains("tpe") => FastTypeTag(mirror, fields("tpe").asInstanceOf[String])
+            case JSONObject(fields) if fields.contains("$ref") => StaticTypeTag.Ref
+            case JSONObject(fields) if fields.contains("tpe") => StaticTypeTag(fields("tpe").asInstanceOf[String])
             case JSONObject(fields) => hints.tag
           }
         }
@@ -211,19 +211,19 @@ package json {
     def atPrimitive: Boolean = primitives.contains(lastReadTag.key)
     def readPrimitive(): Any = {
       datum match {
-        case JSONArray(list) if lastReadTag.key != FastTypeTag.ArrayByte.key &&
-                                lastReadTag.key != FastTypeTag.ArrayShort.key &&
-                                lastReadTag.key != FastTypeTag.ArrayChar.key &&
-                                lastReadTag.key != FastTypeTag.ArrayInt.key &&
-                                lastReadTag.key != FastTypeTag.ArrayLong.key &&
-                                lastReadTag.key != FastTypeTag.ArrayBoolean.key &&
-                                lastReadTag.key != FastTypeTag.ArrayFloat.key &&
-                                lastReadTag.key != FastTypeTag.ArrayDouble.key =>
+        case JSONArray(list) if lastReadTag.key != StaticTypeTag.ArrayByte.key &&
+                                lastReadTag.key != StaticTypeTag.ArrayShort.key &&
+                                lastReadTag.key != StaticTypeTag.ArrayChar.key &&
+                                lastReadTag.key != StaticTypeTag.ArrayInt.key &&
+                                lastReadTag.key != StaticTypeTag.ArrayLong.key &&
+                                lastReadTag.key != StaticTypeTag.ArrayBoolean.key &&
+                                lastReadTag.key != StaticTypeTag.ArrayFloat.key &&
+                                lastReadTag.key != StaticTypeTag.ArrayDouble.key =>
           // now this is a hack!
           val value = mkNestedReader(list.head).primitives(lastReadTag.key)()
           datum = JSONArray(list.tail)
           value
-        case JSONObject(fields) if lastReadTag.key != FastTypeTag.Ref.key =>
+        case JSONObject(fields) if lastReadTag.key != StaticTypeTag.Ref.key =>
           mkNestedReader(fields("value")).primitives(lastReadTag.key)()
         case _ =>
           primitives(lastReadTag.key)()

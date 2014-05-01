@@ -51,7 +51,12 @@ abstract class PicklerRuntime(classLoader: ClassLoader, preclazz: Class[_], shar
       existentialAbstraction(tparams, tpeWithMaybeTparams)
     }
   }
-  val tag = FastTypeTag(mirror, tpe, tpe.key)
+  val tag =
+    new StaticTypeTag[Nothing] {
+      val key = tpe.key
+      val isPrimitive = tpe.typeSymbol.isEffectivelyPrimitive
+    }
+
   debug("PicklerRuntime: tpe = " + tpe)
   val irs = new IRs[ru.type](ru)
   import irs._
@@ -141,7 +146,7 @@ class InterpretedPicklerRuntime(classLoader: ClassLoader, preclazz: Class[_])(im
           putFields()
           builder.endEntry()
         } else {
-          builder.hintTag(FastTypeTag.Null)
+          builder.hintTag(StaticTypeTag.Null)
           builder.beginEntry(null)
           builder.endEntry()
         }
@@ -152,12 +157,11 @@ class InterpretedPicklerRuntime(classLoader: ClassLoader, preclazz: Class[_])(im
 
 // TODO: currently this works with an assumption that sharing settings for unpickling are the same as for pickling
 // of course this might not be the case, so we should be able to read `share` from the pickle itself
-class InterpretedUnpicklerRuntime(mirror: Mirror, tag: FastTypeTag[_])(implicit share: refs.Share) {
+class InterpretedUnpicklerRuntime(mirror: Mirror, tpe: scala.reflect.runtime.universe.Type)(implicit share: refs.Share) {
   import scala.reflect.runtime.universe._
   import definitions._
   import scala.reflect.runtime.{universe => ru}
 
-  val tpe = tag.tpe
   val sym = tpe.typeSymbol.asType
   debug("UnpicklerRuntime: tpe = " + tpe)
   val clazz = mirror.runtimeClass(tpe.erasure)
@@ -176,7 +180,7 @@ class InterpretedUnpicklerRuntime(mirror: Mirror, tag: FastTypeTag[_])(implicit 
   def genUnpickler(implicit pf: PickleFormat): Unpickler[Any] = {
     new Unpickler[Any] with PickleTools {
       val format: PickleFormat = pf
-      def unpickle(tag: => FastTypeTag[_], reader: PReader): Any = {
+      def unpickle(tag: => StaticTypeTag[_], reader: PReader): Any = {
         if (reader.atPrimitive) {
           val result = reader.readPrimitive()
           if (shouldBotherAboutSharing(tpe)) registerUnpicklee(result, preregisterUnpicklee())
@@ -186,10 +190,14 @@ class InterpretedUnpicklerRuntime(mirror: Mirror, tag: FastTypeTag[_])(implicit 
           val pendingFields = (nonLoopyFields ++ loopyFields).filter(fir => fir.isNonParam || fir.isReifiedParam)
           def fieldVals = pendingFields.map(fir => {
             val freader = reader.readField(fir.name)
-            val fstaticTag = FastTypeTag(mirror, fir.tpe, fir.tpe.key)
+            val fstaticSym = fir.tpe.typeSymbol
+            val fstaticTag =
+              new StaticTypeTag[Nothing] {
+                val key = fir.tpe.key
+                val isPrimitive = fstaticSym.isEffectivelyPrimitive
+              }
             freader.hintTag(fstaticTag)
 
-            val fstaticSym = fstaticTag.tpe.typeSymbol
             if (fstaticSym.isEffectivelyFinal) freader.hintStaticallyElidedType()
             val fdynamicTag = freader.beginEntry()
 
@@ -199,7 +207,7 @@ class InterpretedUnpicklerRuntime(mirror: Mirror, tag: FastTypeTag[_])(implicit 
                 if (shouldBotherAboutSharing(fir.tpe)) registerUnpicklee(result, preregisterUnpicklee())
                 result
               } else {
-                val fieldRuntime = new InterpretedUnpicklerRuntime(mirror, fdynamicTag)
+                val fieldRuntime = new InterpretedUnpicklerRuntime(mirror, fir.tpe)
                 val fieldUnpickler = fieldRuntime.genUnpickler
                 fieldUnpickler.unpickle(fdynamicTag, freader)
               }

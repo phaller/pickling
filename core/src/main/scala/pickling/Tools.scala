@@ -410,7 +410,7 @@ abstract class Macro { self =>
 }
 
 case class Hints(
-  tag: FastTypeTag[_] = null,
+  tag: StaticTypeTag[_] = null,
   knownSize: Int = -1,
   isStaticallyElidedType: Boolean = false,
   isDynamicallyElidedType: Boolean = false,
@@ -422,7 +422,7 @@ trait PickleTools {
   var hints = new Hints()
   var areHintsPinned = false
 
-  def hintTag(tag: FastTypeTag[_]): this.type = { hints = hints.copy(tag = tag); this }
+  def hintTag(tag: StaticTypeTag[_]): this.type = { hints = hints.copy(tag = tag); this }
   def hintKnownSize(knownSize: Int): this.type = { hints = hints.copy(knownSize = knownSize); this }
   def hintStaticallyElidedType(): this.type = { hints = hints.copy(isStaticallyElidedType = true); this }
   def hintDynamicallyElidedType(): this.type = { hints = hints.copy(isDynamicallyElidedType = true); this }

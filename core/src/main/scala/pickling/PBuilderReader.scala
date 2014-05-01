@@ -2,10 +2,8 @@ package scala.pickling
 
 import scala.language.experimental.macros
 
-import scala.reflect.runtime.universe._
-
 trait Hintable {
-  def hintTag(tag: FastTypeTag[_]): this.type
+  def hintTag(tag: StaticTypeTag[_]): this.type
   def hintKnownSize(knownSize: Int): this.type
   def hintStaticallyElidedType(): this.type
   def hintDynamicallyElidedType(): this.type
@@ -25,8 +23,7 @@ trait PBuilder extends Hintable {
 }
 
 trait PReader extends Hintable {
-  def mirror: Mirror
-  def beginEntry(): FastTypeTag[_]
+  def beginEntry(): StaticTypeTag[_]
   def beginEntryNoTag(): String
   def atPrimitive: Boolean
   def readPrimitive(): Any

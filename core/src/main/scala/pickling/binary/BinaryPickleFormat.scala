@@ -145,15 +145,15 @@ package binary {
   }
 
   abstract class AbstractBinaryReader(val mirror: Mirror) {
-    protected var _lastTagRead: FastTypeTag[_] = null
+    protected var _lastTagRead: StaticTypeTag[_] = null
     protected var _lastTypeStringRead: String  = null
 
-    protected def lastTagRead: FastTypeTag[_] =
+    protected def lastTagRead: StaticTypeTag[_] =
       if (_lastTagRead != null)
         _lastTagRead
       else {
         // assume _lastTypeStringRead != null
-        _lastTagRead = FastTypeTag(mirror, _lastTypeStringRead)
+        _lastTagRead = StaticTypeTag(_lastTypeStringRead)
         _lastTagRead
       }
   }
@@ -182,8 +182,8 @@ package binary {
         if (hints.isElidedType && nullablePrimitives.contains(hints.tag.key)) {
           val lookahead = nextByte()
           lookahead match {
-            case NULL_TAG => gla = Some(lookahead); FastTypeTag.Null
-            case REF_TAG  => FastTypeTag.Ref
+            case NULL_TAG => gla = Some(lookahead); StaticTypeTag.Null
+            case REF_TAG  => StaticTypeTag.Ref
             case _        => gla = Some(lookahead); hints.tag
           }
         } else if (hints.isElidedType && primitives.contains(hints.tag.key)) {
@@ -192,11 +192,11 @@ package binary {
           val lookahead = nextByte()
           lookahead match {
             case NULL_TAG =>
-              FastTypeTag.Null
+              StaticTypeTag.Null
             case ELIDED_TAG =>
               hints.tag
             case REF_TAG =>
-              FastTypeTag.Ref
+              StaticTypeTag.Ref
             case _ =>
               // do not consume lookahead byte
               decodeStringWithLookahead(lookahead)
@@ -208,12 +208,12 @@ package binary {
         _lastTypeStringRead = res.asInstanceOf[String]
         _lastTypeStringRead
       } else {
-        _lastTagRead = res.asInstanceOf[FastTypeTag[_]]
+        _lastTagRead = res.asInstanceOf[StaticTypeTag[_]]
         _lastTagRead.key
       }
     }
 
-    def beginEntry(): FastTypeTag[_] = {
+    def beginEntry(): StaticTypeTag[_] = {
       beginEntryNoTag()
       lastTagRead
     }
@@ -392,8 +392,8 @@ package binary {
         if (hints.isElidedType && nullablePrimitives.contains(hints.tag.key)) {
           val lookahead = arr(pos)
           lookahead match {
-            case NULL_TAG => pos += 1; FastTypeTag.Null
-            case REF_TAG  => pos += 1; FastTypeTag.Ref
+            case NULL_TAG => pos += 1; StaticTypeTag.Null
+            case REF_TAG  => pos += 1; StaticTypeTag.Ref
             case _        => hints.tag
           }
         } else if (hints.isElidedType && primitives.contains(hints.tag.key)) {
@@ -403,13 +403,13 @@ package binary {
           lookahead match {
             case NULL_TAG =>
               pos += 1
-              FastTypeTag.Null
+              StaticTypeTag.Null
             case ELIDED_TAG =>
               pos += 1
               hints.tag
             case REF_TAG =>
               pos += 1
-              FastTypeTag.Ref
+              StaticTypeTag.Ref
             case _ =>
               val (typeString, newpos) = Util.decodeStringFrom(arr, pos)
               pos = newpos
@@ -422,12 +422,12 @@ package binary {
         _lastTypeStringRead = res.asInstanceOf[String]
         _lastTypeStringRead
       } else {
-        _lastTagRead = res.asInstanceOf[FastTypeTag[_]]
+        _lastTagRead = res.asInstanceOf[StaticTypeTag[_]]
         _lastTagRead.key
       }
     }
 
-    def beginEntry(): FastTypeTag[_] = {
+    def beginEntry(): StaticTypeTag[_] = {
       beginEntryNoTag()
       lastTagRead
     }
@@ -495,30 +495,30 @@ package binary {
     val NULL_TAG: Byte = -2
     val REF_TAG: Byte = -3
 
-    val KEY_NULL    = FastTypeTag.Null.key
-    val KEY_BYTE    = FastTypeTag.Byte.key
-    val KEY_SHORT   = FastTypeTag.Short.key
-    val KEY_CHAR    = FastTypeTag.Char.key
-    val KEY_INT     = FastTypeTag.Int.key
-    val KEY_LONG    = FastTypeTag.Long.key
-    val KEY_BOOLEAN = FastTypeTag.Boolean.key
-    val KEY_FLOAT   = FastTypeTag.Float.key
-    val KEY_DOUBLE  = FastTypeTag.Double.key
-    val KEY_UNIT    = FastTypeTag.Unit.key
+    val KEY_NULL    = StaticTypeTag.Null.key
+    val KEY_BYTE    = StaticTypeTag.Byte.key
+    val KEY_SHORT   = StaticTypeTag.Short.key
+    val KEY_CHAR    = StaticTypeTag.Char.key
+    val KEY_INT     = StaticTypeTag.Int.key
+    val KEY_LONG    = StaticTypeTag.Long.key
+    val KEY_BOOLEAN = StaticTypeTag.Boolean.key
+    val KEY_FLOAT   = StaticTypeTag.Float.key
+    val KEY_DOUBLE  = StaticTypeTag.Double.key
+    val KEY_UNIT    = StaticTypeTag.Unit.key
 
-    val KEY_SCALA_STRING = FastTypeTag.ScalaString.key
-    val KEY_JAVA_STRING  = FastTypeTag.JavaString.key
+    val KEY_SCALA_STRING = StaticTypeTag.ScalaString.key
+    val KEY_JAVA_STRING  = StaticTypeTag.JavaString.key
 
-    val KEY_ARRAY_BYTE    = FastTypeTag.ArrayByte.key
-    val KEY_ARRAY_SHORT   = FastTypeTag.ArrayShort.key
-    val KEY_ARRAY_CHAR    = FastTypeTag.ArrayChar.key
-    val KEY_ARRAY_INT     = FastTypeTag.ArrayInt.key
-    val KEY_ARRAY_LONG    = FastTypeTag.ArrayLong.key
-    val KEY_ARRAY_BOOLEAN = FastTypeTag.ArrayBoolean.key
-    val KEY_ARRAY_FLOAT   = FastTypeTag.ArrayFloat.key
-    val KEY_ARRAY_DOUBLE  = FastTypeTag.ArrayDouble.key
+    val KEY_ARRAY_BYTE    = StaticTypeTag.ArrayByte.key
+    val KEY_ARRAY_SHORT   = StaticTypeTag.ArrayShort.key
+    val KEY_ARRAY_CHAR    = StaticTypeTag.ArrayChar.key
+    val KEY_ARRAY_INT     = StaticTypeTag.ArrayInt.key
+    val KEY_ARRAY_LONG    = StaticTypeTag.ArrayLong.key
+    val KEY_ARRAY_BOOLEAN = StaticTypeTag.ArrayBoolean.key
+    val KEY_ARRAY_FLOAT   = StaticTypeTag.ArrayFloat.key
+    val KEY_ARRAY_DOUBLE  = StaticTypeTag.ArrayDouble.key
 
-    val KEY_REF = FastTypeTag.Ref.key
+    val KEY_REF = StaticTypeTag.Ref.key
 
     val primitives = Set(KEY_NULL, KEY_REF, KEY_BYTE, KEY_SHORT, KEY_CHAR, KEY_INT, KEY_LONG, KEY_BOOLEAN, KEY_FLOAT, KEY_DOUBLE, KEY_UNIT, KEY_SCALA_STRING, KEY_JAVA_STRING, KEY_ARRAY_BYTE, KEY_ARRAY_SHORT, KEY_ARRAY_CHAR, KEY_ARRAY_INT, KEY_ARRAY_LONG, KEY_ARRAY_BOOLEAN, KEY_ARRAY_FLOAT, KEY_ARRAY_DOUBLE)
     val nullablePrimitives = Set(KEY_NULL, KEY_SCALA_STRING, KEY_JAVA_STRING, KEY_ARRAY_BYTE, KEY_ARRAY_SHORT, KEY_ARRAY_CHAR, KEY_ARRAY_INT, KEY_ARRAY_LONG, KEY_ARRAY_BOOLEAN, KEY_ARRAY_FLOAT, KEY_ARRAY_DOUBLE)

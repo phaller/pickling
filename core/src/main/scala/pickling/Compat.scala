@@ -2,6 +2,7 @@ package scala.pickling
 
 import language.experimental.macros
 import scala.language.higherKinds
+import scala.language.existentials
 
 import scala.reflect.macros.Context
 import scala.reflect.api.{Universe => ApiUniverse}
@@ -101,4 +102,11 @@ object Compat {
     val bundle = new { val c: c0.type = c0 } with FastTypeTagMacros
     c.Expr(bundle.apply(key.tree))
   }
+
+  def StaticTypeTagMacros_impl[T: c.WeakTypeTag](c: Context): c.Expr[StaticTypeTag[T]] = {
+    val c0: c.type = c
+    val bundle = new { val c: c0.type = c0 } with StaticTypeTagMacros
+    c.Expr[StaticTypeTag[T]](bundle.impl[T])
+  }
+
 }

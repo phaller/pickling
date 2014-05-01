@@ -19,13 +19,13 @@ import mutable.ArrayBuffer
 class PicklerUnpicklerNotFound[T] extends SPickler[T] with Unpickler[T] {
   val format = null // not used
   def pickle(picklee: T, builder: PBuilder): Unit = ???
-  def unpickle(tag: => FastTypeTag[_], reader: PReader): Any = ???
+  def unpickle(tag: => StaticTypeTag[_], reader: PReader): Any = ???
 }
 
 trait LowPriorityPicklersUnpicklers {
 
   // collections
-
+/*
   implicit def iterablePickler[T: FastTypeTag](implicit elemPickler: SPickler[T], elemUnpickler: Unpickler[T], collTag: FastTypeTag[Iterable[T]], format: PickleFormat, cbf: CanBuildFrom[Iterable[T], T, Iterable[T]]): SPickler[Iterable[T]] with Unpickler[Iterable[T]] =
     mkTravPickler[T, Iterable[T]]
 
@@ -37,26 +37,26 @@ trait LowPriorityPicklersUnpicklers {
 
   implicit def linearSeqPickler[T: FastTypeTag](implicit elemPickler: SPickler[T], elemUnpickler: Unpickler[T], collTag: FastTypeTag[LinearSeq[T]], format: PickleFormat, cbf: CanBuildFrom[LinearSeq[T], T, LinearSeq[T]]): SPickler[LinearSeq[T]] with Unpickler[LinearSeq[T]] =
     mkSeqSetPickler[T, LinearSeq]
-
+*/
   // immutable collections
-
+/*
   implicit def vectorPickler[T: FastTypeTag](implicit elemPickler: SPickler[T], elemUnpickler: Unpickler[T], collTag: FastTypeTag[Vector[T]], format: PickleFormat, cbf: CanBuildFrom[Vector[T], T, Vector[T]]): SPickler[Vector[T]] with Unpickler[Vector[T]] =
     mkSeqSetPickler[T, Vector]
-
+*/
   // TODO: use this instead of the genListPickler
   // implicit def listPickler[T: FastTypeTag](implicit elemPickler: SPickler[T], elemUnpickler: Unpickler[T], collTag: FastTypeTag[::[T]], format: PickleFormat, cbf: CanBuildFrom[::[T], T, ::[T]]): SPickler[::[T]] with Unpickler[::[T]] =
   //   mkSeqSetPickler[T, ::]
 
   // mutable collections
-
+/*
   implicit def arrayPickler[T >: Null: FastTypeTag](implicit elemPickler: SPickler[T], elemUnpickler: Unpickler[T], collTag: FastTypeTag[Array[T]], format: PickleFormat, cbf: CanBuildFrom[Array[T], T, Array[T]]): SPickler[Array[T]] with Unpickler[Array[T]] =
     mkTravPickler[T, Array[T]]
 
   implicit def arrayBufferPickler[T: FastTypeTag](implicit elemPickler: SPickler[T], elemUnpickler: Unpickler[T], collTag: FastTypeTag[ArrayBuffer[T]], format: PickleFormat, cbf: CanBuildFrom[ArrayBuffer[T], T, ArrayBuffer[T]]): SPickler[ArrayBuffer[T]] with Unpickler[ArrayBuffer[T]] =
     mkSeqSetPickler[T, ArrayBuffer]
-
+*/
   // sets
-
+/*
   implicit def immSetPickler[T: FastTypeTag](implicit elemPickler: SPickler[T], elemUnpickler: Unpickler[T], collTag: FastTypeTag[Set[T]], format: PickleFormat, cbf: CanBuildFrom[Set[T], T, Set[T]]): SPickler[Set[T]] with Unpickler[Set[T]] =
     mkSeqSetPickler[T, Set]
 
@@ -68,9 +68,9 @@ trait LowPriorityPicklersUnpicklers {
 
   implicit def mutSortedSetPickler[T: FastTypeTag](implicit elemPickler: SPickler[T], elemUnpickler: Unpickler[T], collTag: FastTypeTag[mutable.SortedSet[T]], format: PickleFormat, cbf: CanBuildFrom[mutable.SortedSet[T], T, mutable.SortedSet[T]]): SPickler[mutable.SortedSet[T]] with Unpickler[mutable.SortedSet[T]] =
     mkSeqSetPickler[T, mutable.SortedSet]
-
+*/
   // maps
-
+/*
   implicit def immMapPickler[K: FastTypeTag, V: FastTypeTag](implicit elemPickler: SPickler[(K, V)], elemUnpickler: Unpickler[(K, V)], pairTag: FastTypeTag[(K, V)], collTag: FastTypeTag[Map[K, V]], format: PickleFormat, cbf: CanBuildFrom[Map[K, V], (K, V), Map[K, V]]): SPickler[Map[K, V]] with Unpickler[Map[K, V]] =
     mkMapPickler[K, V, Map]
 
@@ -79,20 +79,20 @@ trait LowPriorityPicklersUnpicklers {
 
   implicit def mutMapPickler[K: FastTypeTag, V: FastTypeTag](implicit elemPickler: SPickler[(K, V)], elemUnpickler: Unpickler[(K, V)], pairTag: FastTypeTag[(K, V)], collTag: FastTypeTag[mutable.Map[K, V]], format: PickleFormat, cbf: CanBuildFrom[mutable.Map[K, V], (K, V), mutable.Map[K, V]]): SPickler[mutable.Map[K, V]] with Unpickler[mutable.Map[K, V]] =
     mkMapPickler[K, V, mutable.Map]
-
-  def mkTravPickler[T: FastTypeTag, C <% Traversable[_]: FastTypeTag]
+*/
+  def mkTravPickler[T: StaticTypeTag, C <% Traversable[_]: StaticTypeTag]
     (implicit elemPickler: SPickler[T], elemUnpickler: Unpickler[T],
               pf: PickleFormat, cbf: CanBuildFrom[C, T, C],
-              collTag: FastTypeTag[C]): SPickler[C] with Unpickler[C] =
+              collTag: StaticTypeTag[C]): SPickler[C] with Unpickler[C] =
     new SPickler[C] with Unpickler[C] {
 
     val format: PickleFormat = pf
-    val elemTag  = implicitly[FastTypeTag[T]]
-    val isPrimitive = elemTag.tpe.isEffectivelyPrimitive
+    val elemTag  = implicitly[StaticTypeTag[T]]
+    val isPrimitive = elemTag.isPrimitive
 
     def pickle(coll: C, builder: PBuilder): Unit = {
       builder.hintTag(collTag)
-      if (elemTag == FastTypeTag.Int) builder.hintKnownSize(coll.size * 4 + 100)
+      if (elemTag == StaticTypeTag.Int) builder.hintKnownSize(coll.size * 4 + 100)
       builder.beginEntry(coll)
 
       builder.beginCollection(coll.size)
@@ -115,7 +115,7 @@ trait LowPriorityPicklersUnpicklers {
       builder.endEntry()
     }
 
-    def unpickle(tpe: => FastTypeTag[_], preader: PReader): Any = {
+    def unpickle(tpe: => StaticTypeTag[_], preader: PReader): Any = {
       val reader = preader.beginCollection()
 
       if (isPrimitive) {
@@ -141,18 +141,20 @@ trait LowPriorityPicklersUnpicklers {
       builder.result
     }
   }
-
+/*
   def mkMapPickler[K: FastTypeTag, V: FastTypeTag, M[_, _] <: collection.Map[_, _]]
     (implicit elemPickler: SPickler[(K, V)], elemUnpickler: Unpickler[(K, V)],
               pf: PickleFormat, cbf: CanBuildFrom[M[K, V], (K, V), M[K, V]],
               pairTag: FastTypeTag[(K, V)], collTag: FastTypeTag[M[K, V]]): SPickler[M[K, V]] with Unpickler[M[K, V]] =
     mkTravPickler[(K, V), M[K, V]]
-
+*/
+/*
   def mkSeqSetPickler[T: FastTypeTag, Coll[_] <: Traversable[_]]
     (implicit elemPickler: SPickler[T], elemUnpickler: Unpickler[T],
               pf: PickleFormat, cbf: CanBuildFrom[Coll[T], T, Coll[T]],
               collTag: FastTypeTag[Coll[T]]): SPickler[Coll[T]] with Unpickler[Coll[T]] =
     mkTravPickler[T, Coll[T]]
+*/
 }
 
 trait CollectionPicklerUnpicklerMacro extends Macro {
@@ -186,13 +188,13 @@ trait CollectionPicklerUnpicklerMacro extends Macro {
           val elunpickler = "bam!"
           implicitly[Unpickler[$eltpe]]
         }
-        val eltag: scala.pickling.FastTypeTag[$eltpe] = {
+        val eltag: scala.pickling.StaticTypeTag[$eltpe] = {
           val eltag = "bam!"
-          implicitly[scala.pickling.FastTypeTag[$eltpe]]
+          implicitly[scala.pickling.StaticTypeTag[$eltpe]]
         }
-        val colltag: scala.pickling.FastTypeTag[$tpe] = {
+        val colltag: scala.pickling.StaticTypeTag[$tpe] = {
           val colltag = "bam!"
-          implicitly[scala.pickling.FastTypeTag[$tpe]]
+          implicitly[scala.pickling.StaticTypeTag[$tpe]]
         }
 
         def pickle(picklee: $tpe, builder: PBuilder): Unit = {
@@ -234,7 +236,7 @@ trait CollectionPicklerUnpicklerMacro extends Macro {
           builder.endCollection()
           builder.endEntry()
         }
-        def unpickle(tag: => scala.pickling.FastTypeTag[_], reader: PReader): Any = {
+        def unpickle(tag: => scala.pickling.StaticTypeTag[_], reader: PReader): Any = {
           val arrReader = reader.beginCollection()
           ${
             if (isPrimitive) q"arrReader.hintStaticallyElidedType(); arrReader.hintTag(eltag); arrReader.pinHints()".asInstanceOf[Tree]
@@ -275,7 +277,7 @@ trait CorePicklersUnpicklers extends GenPicklers with GenUnpicklers with LowPrio
   import java.math.{BigDecimal, BigInteger}
   import java.util.{Date, TimeZone}
   import java.text.SimpleDateFormat
-
+/*
   implicit object BigDecimalPicklerUnpickler extends SPickler[BigDecimal] with Unpickler[BigDecimal] {
     val format = null // not used
     def pickle(picklee: BigDecimal, builder: PBuilder): Unit = {
@@ -361,14 +363,14 @@ trait CorePicklersUnpicklers extends GenPicklers with GenUnpicklers with LowPrio
       dateFormat.parse(result.asInstanceOf[String])
     }
   }
-
+*/
   class PrimitivePicklerUnpickler[T] extends SPickler[T] with Unpickler[T] {
     val format = null // not used
     def pickle(picklee: T, builder: PBuilder): Unit = {
       builder.beginEntry(picklee)
       builder.endEntry()
     }
-    def unpickle(tag: => FastTypeTag[_], reader: PReader): Any = {
+    def unpickle(tag: => StaticTypeTag[_], reader: PReader): Any = {
       reader.readPrimitive()
     }
   }

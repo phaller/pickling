@@ -114,6 +114,7 @@ trait PicklerMacros extends Macro {
       })
       val endEntry = q"builder.endEntry()"
       if (shouldBotherAboutSharing(tpe)) {
+        // TODO: do not import from reflect.runtime if in static-only mode!
         q"""
           import scala.reflect.runtime.universe._
           val oid = scala.pickling.internal.`package`.lookupPicklee(picklee)
@@ -285,6 +286,7 @@ trait UnpicklerMacros extends Macro {
     }
 
     val unpicklerName = c.fresh(syntheticUnpicklerName(tpe).toTermName)
+    // TODO: do not import from reflect.runtime if in static-only mode!
     q"""
       implicit object $unpicklerName extends scala.pickling.Unpickler[$tpe] with Generated {
         import scala.pickling._
@@ -292,7 +294,7 @@ trait UnpicklerMacros extends Macro {
         import scala.pickling.internal._
         import scala.reflect.runtime.universe._
         val format = implicitly[${format.tpe}]
-        def unpickle(tag: => FastTypeTag[_], reader: PReader): Any = $unpickleLogic
+        def unpickle(tag: => StaticTypeTag[_], reader: PReader): Any = $unpickleLogic
       }
       $unpicklerName
     """
@@ -336,7 +338,7 @@ trait PickleMacros extends Macro {
   }
 
   def createPickler(tpe: c.Type, builder: c.Tree): c.Tree = q"""
-    $builder.hintTag(implicitly[scala.pickling.FastTypeTag[$tpe]])
+    $builder.hintTag(implicitly[scala.pickling.StaticTypeTag[$tpe]])
     implicitly[SPickler[$tpe]]
   """
 
@@ -345,7 +347,7 @@ trait PickleMacros extends Macro {
     def abstractTypeDispatch =
       q"""
         val customPickler = implicitly[SPickler[$tpe]]
-        $builder.hintTag(implicitly[scala.pickling.FastTypeTag[$tpe]])
+        $builder.hintTag(implicitly[scala.pickling.StaticTypeTag[$tpe]])
         customPickler
       """
     def finalDispatch = {
@@ -370,7 +372,7 @@ trait PickleMacros extends Macro {
           // 1. we have found a custom pickler that can handle the abstract type tpe
           // 2. we have generated a pickler for a concrete superclass!
           // in the 2nd case we still have to do the dispatch!
-          $builder.hintTag(implicitly[scala.pickling.FastTypeTag[$tpe]])
+          $builder.hintTag(implicitly[scala.pickling.StaticTypeTag[$tpe]])
           customPickler
         }
       """
@@ -470,15 +472,15 @@ trait UnpickleMacros extends Macro {
     def finalDispatch = {
       if (sym.isNotNullable) createUnpickler(tpe)
       else q"""
-        val tag = scala.pickling.FastTypeTag(typeString)
-        if (tag.key == scala.pickling.FastTypeTag.Null.key) ${createUnpickler(NullTpe)}
-        else if (tag.key == scala.pickling.FastTypeTag.Ref.key) ${createUnpickler(RefTpe)}
+        val tag = scala.pickling.StaticTypeTag(typeString)
+        if (tag.key == scala.pickling.StaticTypeTag.Null.key) ${createUnpickler(NullTpe)}
+        else if (tag.key == scala.pickling.StaticTypeTag.Ref.key) ${createUnpickler(RefTpe)}
         else ${createUnpickler(tpe)}
       """
     }
 
     val customDispatch = CaseDef(Ident(nme.WILDCARD), EmptyTree, q"customUnpickler")
-    val refDispatch = CaseDef(Literal(Constant(FastTypeTag.Ref.key)), EmptyTree, createUnpickler(typeOf[refs.Ref]))
+    val refDispatch = CaseDef(Literal(Constant(StaticTypeTag.Ref.key)), EmptyTree, createUnpickler(typeOf[refs.Ref]))
 
     def nonFinalDispatch = {
       val compileTimeDispatch = compileTimeDispatchees(tpe) map (subtpe => {
@@ -486,7 +488,7 @@ trait UnpickleMacros extends Macro {
         CaseDef(Literal(Constant(subtpe.key)), EmptyTree, createUnpickler(subtpe))
       })
       val runtimeDispatch = CaseDef(Ident(nme.WILDCARD), EmptyTree, q"""
-        val tag = scala.pickling.FastTypeTag(typeString)
+        val tag = scala.pickling.StaticTypeTag(typeString)
         Unpickler.genUnpickler(reader.mirror, tag)
       """)
 
@@ -515,11 +517,11 @@ trait UnpickleMacros extends Macro {
 
     q"""
       val reader = $readerArg
-      reader.hintTag(implicitly[scala.pickling.FastTypeTag[$tpe]])
+      reader.hintTag(implicitly[scala.pickling.StaticTypeTag[$tpe]])
       $staticHint
       val typeString = reader.beginEntryNoTag()
       val unpickler = $dispatchLogic
-      val result = unpickler.unpickle({ scala.pickling.FastTypeTag(typeString) }, reader)
+      val result = unpickler.unpickle({ scala.pickling.StaticTypeTag(typeString) }, reader)
       reader.endEntry()
       $unpickleeCleanup
       result.asInstanceOf[$tpe]
