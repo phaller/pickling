@@ -148,14 +148,25 @@ trait PicklerMacros extends Macro {
       }
     }
 
-    val picklerName = c.fresh(syntheticPicklerName(tpe).toTermName)
+    val name = syntheticPicklerName(tpe)
+    val picklerName = c.fresh(name.toTermName)
+    val picklerClassName = c.fresh(name)
+    val picklerClassNameString = picklerClassName.toString
+    val typeName = tpe.toString
+    val registryName = c.fresh(newTermName("registry"))
     q"""
-      implicit object $picklerName extends scala.pickling.SPickler[$tpe] with Generated {
+      implicit var $picklerName: scala.pickling.SPickler[$tpe] with Generated = null
+      class $picklerClassName extends scala.pickling.SPickler[$tpe] with Generated {
         import scala.pickling._
         import scala.pickling.internal._
         import scala.pickling.`package`.PickleOps
         val format = implicitly[${format.tpe}]
         def pickle(picklee: $tpe, builder: PBuilder): Unit = $pickleLogic
+      }
+      $picklerName = new $picklerClassName
+      val $registryName = implicitly[scala.pickling.Registry]
+      if (!$registryName.isInstanceOf[scala.pickling.RegistryNotFound]) {
+        $registryName.register($typeName, $picklerName.getClass.getName)
       }
       $picklerName
     """
