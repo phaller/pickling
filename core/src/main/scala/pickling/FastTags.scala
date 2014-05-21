@@ -54,7 +54,9 @@ object FastTypeTag {
     }
   }
 
-  def apply(mirror: ru.Mirror, key: String): FastTypeTag[_] = apply(mirror, typeFromString(mirror, key), key)
+  def apply(mirror: ru.Mirror, key: String): FastTypeTag[_] =
+    apply(mirror, RuntimeExtensions.typeFromString(mirror, key), key)
+
   def apply(key: String): FastTypeTag[_] = macro Compat.FastTypeTagMacros_apply
 }
 

@@ -7,7 +7,7 @@ import org.scalatest.FunSuite
 
 case class MyClass[A](myString: String, a: A)
 
-class MyClassPickler[A](implicit val format: PickleFormat, aTypeTag: FastTypeTag[A],
+class MyClassPickler[A](implicit val format: PickleFormat, aTypeTag: StaticTypeTag[A],
                                      aPickler: SPickler[A], aUnpickler: Unpickler[A])
   extends SPickler[MyClass[A]] with Unpickler[MyClass[A]] {
 
@@ -17,7 +17,7 @@ class MyClassPickler[A](implicit val format: PickleFormat, aTypeTag: FastTypeTag
     builder.beginEntry(picklee)
 
     builder.putField("myString",
-      b => b.hintTag(FastTypeTag.ScalaString).beginEntry(picklee.myString).endEntry()
+      b => b.hintTag(StaticTypeTag.ScalaString).beginEntry(picklee.myString).endEntry()
     )
 
     builder.putField("a",
@@ -30,8 +30,8 @@ class MyClassPickler[A](implicit val format: PickleFormat, aTypeTag: FastTypeTag
     builder.endEntry()
   }
 
-  override def unpickle(tag: => FastTypeTag[_], reader: PReader): MyClass[A] = {
-    reader.hintTag(FastTypeTag.ScalaString)
+  override def unpickle(tag: => StaticTypeTag[_], reader: PReader): MyClass[A] = {
+    reader.hintTag(StaticTypeTag.ScalaString)
     val tag = reader.beginEntry()
 	  val myStringUnpickled = stringUnpickler.unpickle(tag, reader).asInstanceOf[String]
 	  reader.endEntry()
@@ -49,7 +49,7 @@ class MyClassPickler[A](implicit val format: PickleFormat, aTypeTag: FastTypeTag
 
 class CustomGenericPicklerTest extends FunSuite {
 
-  implicit def myClassPickler[A: SPickler: Unpickler: FastTypeTag](implicit pf: PickleFormat) =
+  implicit def myClassPickler[A: SPickler: Unpickler: StaticTypeTag](implicit pf: PickleFormat) =
     new MyClassPickler
 
   test("main") {

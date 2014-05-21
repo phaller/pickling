@@ -40,11 +40,11 @@ class CombinatorPickleIntoTest extends FunSuite {
         def pickle(p: Person, builder: PBuilder): Unit = {
           // let's say we only want to pickle id, since we can look up name and age based on id
           // then we can make use of a size hint, so that a fixed-size array can be used for pickling
-          builder.hintTag(implicitly[FastTypeTag[Person]])
+          builder.hintTag(implicitly[StaticTypeTag[Person]])
           builder.hintKnownSize(100) // FIXME: if the value is too small, we can get java.lang.ArrayIndexOutOfBoundsException
           builder.beginEntry(p)
           builder.putField("id", b => {
-            b.hintTag(FastTypeTag.Int)
+            b.hintTag(StaticTypeTag.Int)
             b.hintStaticallyElidedType()
             intp.pickle(p.id, b)
           })
@@ -55,8 +55,8 @@ class CombinatorPickleIntoTest extends FunSuite {
     implicit def personup(implicit intup: Unpickler[Int]): Unpickler[Person] =
       new Unpickler[Person] {
         val format = intup.format
-        def unpickle(tag: => FastTypeTag[_], reader: PReader): Any = {
-          reader.hintTag(FastTypeTag.Int)
+        def unpickle(tag: => StaticTypeTag[_], reader: PReader): Any = {
+          reader.hintTag(StaticTypeTag.Int)
           reader.hintStaticallyElidedType()
           val tag = reader.beginEntry()
           val unpickled = intup.unpickle(tag, reader).asInstanceOf[Int]

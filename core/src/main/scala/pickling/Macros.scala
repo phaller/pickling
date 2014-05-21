@@ -489,7 +489,8 @@ trait UnpickleMacros extends Macro {
       })
       val runtimeDispatch = CaseDef(Ident(nme.WILDCARD), EmptyTree, q"""
         val tag = scala.pickling.StaticTypeTag(typeString)
-        Unpickler.genUnpickler(reader.mirror, tag)
+        val tpe = scala.pickling.RuntimeExtensions.typeFromString(reader.mirror, tag.key)
+        Unpickler.genUnpickler(reader.mirror, tpe)
       """)
 
       q"""

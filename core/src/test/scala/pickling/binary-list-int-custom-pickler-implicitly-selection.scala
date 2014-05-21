@@ -19,7 +19,7 @@ class BinaryListIntCustomTest extends FunSuite {
         val length = arr.length
         builder.beginCollection(arr.length)
         builder.hintStaticallyElidedType()
-        builder.hintTag(FastTypeTag.Int)
+        builder.hintTag(StaticTypeTag.Int)
         builder.pinHints()
 
         var i: Int = 0
@@ -33,10 +33,10 @@ class BinaryListIntCustomTest extends FunSuite {
         builder.endCollection()
         builder.endEntry()
       }
-      def unpickle(tag: => FastTypeTag[_], reader: PReader): Any = {
+      def unpickle(tag: => StaticTypeTag[_], reader: PReader): Any = {
         val arrReader = reader.beginCollection()
         arrReader.hintStaticallyElidedType()
-        arrReader.hintTag(FastTypeTag.Int)
+        arrReader.hintTag(StaticTypeTag.Int)
         arrReader.pinHints()
 
         val buffer = ListBuffer[Int]()

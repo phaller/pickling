@@ -42,28 +42,11 @@ package object internal {
   var cachedMirror: ru.Mirror = null
   def currentMirror: ru.Mirror = macro Compat.CurrentMirrorMacro_impl
 
+  /* Utilities for converting between types and strings.
+   */
   private[pickling] def typeToString(tpe: Type): String = tpe.key
 
-  private val typeFromStringCache = scala.collection.concurrent.TrieMap[String, Type]()
-  private[pickling] def typeFromString(mirror: Mirror, stpe: String): Type = {
-    // TODO: find out why typeFromString is called repeatedly for scala.Predef.String (at least in the evactor1 bench)
-    if (typeFromStringCache.contains(stpe)) typeFromStringCache(stpe)
-    else {
-      val result =
-        AppliedType.parse(stpe) match {
-          case (AppliedType(typename, appliedTypeArgs), _) =>
-            val sym =
-              if (typename.endsWith(".type")) mirror.staticModule(typename.stripSuffix(".type")).moduleClass
-              else mirror.staticClass(typename)
-            val tycon = sym.asType.toTypeConstructor
-            appliedType(tycon, appliedTypeArgs.map(starg => typeFromString(mirror, starg.toString)))
-          case _ =>
-            sys.error(s"fatal: cannot unpickle $stpe")
-        }
-      typeFromStringCache(stpe) = result
-      result
-    }
-  }
+  private[pickling] val typeFromStringCache = scala.collection.concurrent.TrieMap[String, Type]()
 
   // FIXME: duplication wrt Tools, but I don't really fancy abstracting away this path-dependent madness
   private[pickling] implicit class RichTypeFIXME(tpe: Type) {

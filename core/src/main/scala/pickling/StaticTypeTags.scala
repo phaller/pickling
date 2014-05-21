@@ -1,6 +1,6 @@
 package scala.pickling
 
-import language.experimental.macros
+import scala.language.experimental.macros
 
 trait StaticTypeTag[T] extends Equals {
 
@@ -8,11 +8,11 @@ trait StaticTypeTag[T] extends Equals {
 
   def isPrimitive: Boolean
 
-  override def canEqual(x: Any) =
-    x.isInstanceOf[StaticTypeTag[_]]
+  override def canEqual(that: Any) =
+    that.isInstanceOf[StaticTypeTag[_]]
 
-  override def equals(x: Any) =
-    x.isInstanceOf[StaticTypeTag[_]]
+  override def equals(that: Any) =
+    that.isInstanceOf[StaticTypeTag[_]] && this.key == that.asInstanceOf[StaticTypeTag[_]].key
 
   override def hashCode =
     key.hashCode
@@ -44,31 +44,45 @@ object StaticTypeTag {
   implicit val Float   = primitiveTag[Float]("scala.Float")
   implicit val Double  = primitiveTag[Double]("scala.Double")
 
-  val ScalaString = primitiveTag[String]("scala.String")
+  val ScalaString = primitiveTag[String]("java.lang.String")
   implicit val JavaString = primitiveTag[java.lang.String]("java.lang.String")
 
-  implicit val ArrayByte = primitiveTag[Array[Byte]]("scala.Array[Byte]")
-  implicit val ArrayShort = primitiveTag[Array[Short]]("scala.Array[Short]")
-  implicit val ArrayChar = primitiveTag[Array[Char]]("scala.Array[Char]")
-  implicit val ArrayInt = primitiveTag[Array[Int]]("scala.Array[Int]")
-  implicit val ArrayLong = primitiveTag[Array[Long]]("scala.Array[Long]")
-  implicit val ArrayBoolean = primitiveTag[Array[Boolean]]("scala.Array[Boolean]")
-  implicit val ArrayFloat = primitiveTag[Array[Float]]("scala.Array[Float]")
-  implicit val ArrayDouble = primitiveTag[Array[Double]]("scala.Array[Double]")
+  implicit val ArrayByte = primitiveTag[Array[Byte]]("scala.Array[scala.Byte]")
+  implicit val ArrayShort = primitiveTag[Array[Short]]("scala.Array[scala.Short]")
+  implicit val ArrayChar = primitiveTag[Array[Char]]("scala.Array[scala.Char]")
+  implicit val ArrayInt = primitiveTag[Array[Int]]("scala.Array[scala.Int]")
+  implicit val ArrayLong = primitiveTag[Array[Long]]("scala.Array[scala.Long]")
+  implicit val ArrayBoolean = primitiveTag[Array[Boolean]]("scala.Array[scala.Boolean]")
+  implicit val ArrayFloat = primitiveTag[Array[Float]]("scala.Array[scala.Float]")
+  implicit val ArrayDouble = primitiveTag[Array[Double]]("scala.Array[scala.Double]")
 
   implicit val Ref = primitiveTag[refs.Ref]("scala.pickling.refs.Ref")
 
   def apply(name: String): StaticTypeTag[_] = {
-    // TODO: complete
     def testPrimitive() = name match {
-      case "scala.Int"        => true
-      case "scala.String"     => true
-      case "java.lang.String" => true
-      case "scala.Null"       => true
-      case _                  => false
+      case "scala.Byte"                 => true
+      case "scala.Short"                => true
+      case "scala.Char"                 => true
+      case "scala.Int"                  => true
+      case "scala.Long"                 => true
+      case "scala.Boolean"              => true
+      case "scala.Float"                => true
+      case "scala.Double"               => true
+      case "scala.String"               => true
+      case "java.lang.String"           => true
+      case "scala.Null"                 => true
+      case "scala.Array[scala.Byte]"    => true
+      case "scala.Array[scala.Short]"   => true
+      case "scala.Array[scala.Char]"    => true
+      case "scala.Array[scala.Int]"     => true
+      case "scala.Array[scala.Long]"    => true
+      case "scala.Array[scala.Boolean]" => true
+      case "scala.Array[scala.Float]"   => true
+      case "scala.Array[scala.Double]"  => true
+      case _                            => false
     }
     new StaticTypeTag[Nothing] {
-      val key = name
+      val key = if (name == "scala.String") "java.lang.String" else name
       val isPrimitive = testPrimitive()
     }
   }

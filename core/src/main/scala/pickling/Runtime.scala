@@ -54,7 +54,7 @@ abstract class PicklerRuntime(classLoader: ClassLoader, preclazz: Class[_], shar
   val tag =
     new StaticTypeTag[Nothing] {
       val key = tpe.key
-      val isPrimitive = tpe.typeSymbol.isEffectivelyPrimitive
+      val isPrimitive = tpe.isEffectivelyPrimitive
     }
 
   debug("PicklerRuntime: tpe = " + tpe)
@@ -194,7 +194,7 @@ class InterpretedUnpicklerRuntime(mirror: Mirror, tpe: scala.reflect.runtime.uni
             val fstaticTag =
               new StaticTypeTag[Nothing] {
                 val key = fir.tpe.key
-                val isPrimitive = fstaticSym.isEffectivelyPrimitive
+                val isPrimitive = fir.tpe.isEffectivelyPrimitive
               }
             freader.hintTag(fstaticTag)
 
