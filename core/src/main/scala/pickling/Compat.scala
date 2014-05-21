@@ -1,16 +1,9 @@
 package scala.pickling
 
-import language.experimental.macros
-import scala.language.higherKinds
 import scala.language.existentials
 
 import scala.reflect.macros.Context
-import scala.reflect.api.{Universe => ApiUniverse}
-import scala.reflect.runtime.{universe => ru}
-
-import scala.collection.mutable
-import scala.collection.immutable
-import scala.collection.generic.CanBuildFrom
+import scala.reflect.runtime.universe.Mirror
 
 // this is only necessary because 2.10.x doesn't support macro bundles
 object Compat {
@@ -85,10 +78,10 @@ object Compat {
     c.Expr[Unit](bundle.dpicklerPickle[T](picklee.tree, builder.tree))
   }
 
-  def CurrentMirrorMacro_impl(c: Context): c.Expr[ru.Mirror] = {
+  def CurrentMirrorMacro_impl(c: Context): c.Expr[Mirror] = {
     val c0: c.type = c
     val bundle = new { val c: c0.type = c0 } with CurrentMirrorMacro
-    c.Expr[ru.Mirror](bundle.impl)
+    c.Expr[Mirror](bundle.impl)
   }
 
   def FastTypeTagMacros_impl[T: c.WeakTypeTag](c: Context): c.Expr[FastTypeTag[T]] = {
