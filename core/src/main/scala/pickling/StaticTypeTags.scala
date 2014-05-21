@@ -22,6 +22,41 @@ trait StaticTypeTag[T] extends Equals {
 }
 
 object StaticTypeTag {
+
+  implicit object somePickler extends SPickler[StaticTypeTag[_]] with Unpickler[StaticTypeTag[_]] {
+    val format = null // not used
+    def pickle(picklee: StaticTypeTag[_], builder: PBuilder): Unit = {
+      builder.beginEntry(picklee)
+
+      builder.putField("value", b => {
+        b.hintTag(implicitly[StaticTypeTag[String]])
+        b.hintStaticallyElidedType()
+        SPickler.stringPicklerUnpickler.pickle(picklee.key, b)
+      })
+
+      builder.endEntry()
+    }
+    def unpickle(tag: => StaticTypeTag[_], reader: PReader): Any = {
+      val reader1 = reader.readField("value")
+      reader1.hintTag(implicitly[StaticTypeTag[String]])
+      reader1.hintStaticallyElidedType()
+
+      val tag = reader1.beginEntry()
+      val result = SPickler.stringPicklerUnpickler.unpickle(tag, reader1)
+      reader1.endEntry()
+
+      StaticTypeTag.apply(result.asInstanceOf[String])
+    }
+  }
+
+  implicit def pickler[T] = new SPickler[StaticTypeTag[T]] with Unpickler[StaticTypeTag[T]] {
+    val format = null // not used
+    def pickle(picklee: StaticTypeTag[T], builder: PBuilder): Unit =
+      somePickler.pickle(picklee, builder)
+    def unpickle(tag: => StaticTypeTag[_], reader: PReader): Any =
+      somePickler.unpickle(tag, reader)
+  }
+
   implicit def materializeStaticTypeTag[T]: StaticTypeTag[T] =
     macro Compat.StaticTypeTagMacros_impl[T]
 
