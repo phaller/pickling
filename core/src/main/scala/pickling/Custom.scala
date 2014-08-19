@@ -5,6 +5,7 @@ import scala.pickling.internal._
 import scala.language.experimental.macros
 import scala.language.higherKinds
 
+import scala.reflect.runtime.{universe => ru}
 import scala.reflect.runtime.universe._
 
 import scala.collection.immutable
@@ -79,6 +80,58 @@ trait LowPriorityPicklersUnpicklers {
 
   implicit def mutMapPickler[K: FastTypeTag, V: FastTypeTag](implicit elemPickler: SPickler[(K, V)], elemUnpickler: Unpickler[(K, V)], pairTag: FastTypeTag[(K, V)], collTag: FastTypeTag[mutable.Map[K, V]], format: PickleFormat, cbf: CanBuildFrom[mutable.Map[K, V], (K, V), mutable.Map[K, V]]): SPickler[mutable.Map[K, V]] with Unpickler[mutable.Map[K, V]] =
     mkMapPickler[K, V, mutable.Map]
+
+
+  def mkAnyRefArrayTravPickler[C <% Traversable[_]](mirror: ru.Mirror, classLoader: ClassLoader)(implicit pf: PickleFormat, cbf: CanBuildFrom[C, AnyRef, C]):
+    SPickler[C] /*with Unpickler[C]*/ = new SPickler[C] /*with Unpickler[C]*/ {
+
+    val format: PickleFormat = pf
+
+    def pickle(coll: C, builder: PBuilder): Unit = {
+      builder.hintTag(FastTypeTag.ArrayAnyRef)
+      builder.beginEntry(coll)
+
+      builder.beginCollection(coll.size)
+      (coll: Traversable[_]).asInstanceOf[Traversable[AnyRef]].foreach { (elem: AnyRef) =>
+        builder putElement { b =>
+          val elemClass = elem.getClass
+          b.hintTag(FastTypeTag.mkRaw(elemClass, mirror)) // slow: `mkRaw` is called for each element
+          val pickler = SPickler.genPickler(classLoader, elemClass).asInstanceOf[SPickler[AnyRef]]
+          pickler.pickle(elem, b)
+        }
+      }
+      builder.endCollection()
+
+      builder.endEntry()
+    }
+  }
+
+  def mkFastArrayTravPickler[C <% Traversable[_]](mirror: ru.Mirror, classLoader: ClassLoader, elemTag: FastTypeTag[_], elemPickler0: SPickler[_])
+                                                 (implicit pf: PickleFormat, cbf: CanBuildFrom[C, AnyRef, C]):
+    SPickler[C] /*with Unpickler[C]*/ = new SPickler[C] /*with Unpickler[C]*/ {
+
+    val format: PickleFormat = pf
+
+    val elemPickler = elemPickler0.asInstanceOf[SPickler[AnyRef]]
+
+    def pickle(coll: C, builder: PBuilder): Unit = {
+      builder.hintTag(FastTypeTag.ArrayAnyRef)
+      builder.beginEntry(coll)
+
+      builder.beginCollection(coll.size)
+      (coll: Traversable[_]).asInstanceOf[Traversable[AnyRef]].foreach { (elem: AnyRef) =>
+        builder putElement { b =>
+          val elemClass = elem.getClass
+          b.hintTag(elemTag)
+          elemPickler.pickle(elem, b)
+        }
+      }
+      builder.endCollection()
+
+      builder.endEntry()
+    }
+  }
+
 
   def mkTravPickler[T: FastTypeTag, C <% Traversable[_]: FastTypeTag]
     (implicit elemPickler: SPickler[T], elemUnpickler: Unpickler[T],
@@ -271,7 +324,7 @@ trait CollectionPicklerUnpicklerMacro extends Macro {
   }
 }
 
-trait CorePicklersUnpicklers extends GenPicklers with GenUnpicklers with LowPriorityPicklersUnpicklers {
+trait CorePicklersUnpicklers extends LowPriorityPicklersUnpicklers {
   import java.math.{BigDecimal, BigInteger}
   import java.util.{Date, TimeZone}
   import java.text.SimpleDateFormat

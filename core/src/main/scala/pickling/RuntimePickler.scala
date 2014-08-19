@@ -12,11 +12,14 @@ class RuntimeTypeInfo(classLoader: ClassLoader, clazz: Class[_], share: refs.Sha
   import ru._
   import definitions._
 
+  debug(s"Initializing runtime type info for class '${clazz.getName}'...")
+
   val mirror: ru.Mirror =
     ru.runtimeMirror(classLoader)
 
   val sym =
     if (clazz != null) mirror.classSymbol(clazz) else NullClass
+  debug(s"sym: $sym")
 
   val tpe = {
     val elemClass: Class[_] =
@@ -27,11 +30,14 @@ class RuntimeTypeInfo(classLoader: ClassLoader, clazz: Class[_], share: refs.Sha
     else
       sym.asType.toType
   }
+  debug(s"tpe: ${tpe.key}")
 
   val irs = new IRs[ru.type](ru)
   val cir = irs.newClassIR(tpe)
+  debug(s"CIR: ${cir.fields.mkString(",")}")
 
   val tag = FastTypeTag(mirror, tpe, tpe.key)
+  debug(s"tag: $tag")
 
   val shareAnalyzer = new ShareAnalyzer[ru.type](ru) {
     def shareEverything = share.isInstanceOf[refs.ShareEverything]
