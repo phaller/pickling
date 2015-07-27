@@ -13,6 +13,13 @@ trait StaticTypeTag[T] extends Equals {
     */
   def key: String
 
+  /**
+   * Tests whether this tag is effectively a primitive type.  Note: We duplicate logic
+   * out of regular runtime reflection here to avoid the burden of requiring runtime reflection.
+   */
+  def isEffectivelyPrimitive: Boolean =
+    StaticTypeTag.EffectivePrimitiveTags.contains(key)
+
   override def canEqual(x: Any) = x.isInstanceOf[StaticTypeTag[_]]
 
   // equals skips runtime reflection because it's potentially
@@ -73,6 +80,18 @@ object StaticTypeTag {
   implicit val Nothing: StaticTypeTag[Nothing] = stdTag[Nothing]
 
   implicit val Ref = stdTag[refs.Ref]
+
+  // NOTE; This is a bit of a hack, copied from [[Symbols.isPrimitive]]
+  private val EffectivePrimitiveTags: Set[String] = {
+    val primitives = Seq(
+      Double, Float, Long, Int, Char, Short, Byte, Unit, Boolean
+    )
+    // TODO - create array primitives out of the above seq
+    val arrayPrimitives = Seq(
+      ArrayDouble, ArrayFloat, ArrayLong, ArrayInt, ArrayChar, ArrayShort, ArrayByte, ArrayUnit, ArrayBoolean
+    )
+    (primitives ++ arrayPrimitives).map(_.key).toSet
+  }
 
   def valueTypeName(tag: StaticTypeTag[_]): String = {
     val clazz: Class[_] = tag match {

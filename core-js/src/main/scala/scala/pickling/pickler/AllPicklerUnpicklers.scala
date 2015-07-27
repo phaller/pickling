@@ -14,13 +14,12 @@ trait AllPicklers extends PrimitivePicklers
 */
   with GenPicklers
   with GenUnpicklers
-  /*with LowPriorityPicklers*/ {}
+  with LowPriorityPicklers {}
 object AllPicklers extends AllPicklers {}
 
 /** All picklers for collections with exception of List which is handled by macro.
  */
-/*
-trait CollectionPicklers extends MutableMapPicklers
+trait CollectionPicklers extends /*MutableMapPicklers
   with ImmutableSortedMapPicklers
   with MapPicklers
   with MutableSortedSetPicklers
@@ -33,8 +32,7 @@ trait CollectionPicklers extends MutableMapPicklers
   with LinearSeqPicklers
   with IndexedSeqPicklers
   with SeqPicklers
-  with IterablePicklers {}
+  with*/ IterablePicklers {}
 
 trait LowPriorityPicklers extends CollectionPicklers
-  with AnyUnpicklers {}
-*/
+  /*with AnyUnpicklers*/ {}
