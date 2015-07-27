@@ -20,7 +20,7 @@ package object internal {
    * Note: visibility must be public, so that the lock can be accessed from
    *       macro-generated code.
    */
-  // val GRL = new java.util.concurrent.locks.ReentrantLock
+  val GRL = new scala.pickling.util.DummyLock
 
   // TOGGLE DEBUGGING
   private val debugEnabled: Boolean = false // System.getProperty("pickling.debug", "false").toBoolean

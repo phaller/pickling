@@ -55,7 +55,7 @@ trait PicklerUnpicklerMacros extends Macro
         import _root_.scala.language.existentials
         override def pickle(picklee: $tpe, builder: _root_.scala.pickling.PBuilder): _root_.scala.Unit = $picklerTree
         override def unpickle(tagKey: _root_.java.lang.String, reader: _root_.scala.pickling.PReader): _root_.scala.Any = $unpicklerTree
-        override def tag: _root_.scala.pickling.FastTypeTag[$tpe] = $createTagTree
+        override def tag: _root_.scala.pickling.StaticTypeTag[$tpe] = $createTagTree
       }
       $picklerUnpicklerName
     """
@@ -69,14 +69,17 @@ trait PicklerUnpicklerMacros extends Macro
 trait PicklerMacros extends Macro with PickleMacros with StaticTypeTagMacros {
   import c.universe._
 
+  // val classLoader = this.getClass.getClassLoader
+  // _root_.scala.pickling.StaticTypeTag.mkRaw(clazz, _root_.scala.reflect.runtime.universe.runtimeMirror(classLoader))
+  // _root_.scala.pickling.runtime.RuntimePicklerLookup.genPickler(classLoader, clazz, tag)
   def createRuntimePickler(builder: c.Tree): c.Tree = q"""
-    val classLoader = this.getClass.getClassLoader
+    ???
     _root_.scala.pickling.internal.GRL.lock()
     val tag = try {
-      _root_.scala.pickling.FastTypeTag.mkRaw(clazz, _root_.scala.reflect.runtime.universe.runtimeMirror(classLoader))
+      ???
     } finally _root_.scala.pickling.internal.GRL.unlock()
     $builder.hintTag(tag)
-    _root_.scala.pickling.runtime.RuntimePicklerLookup.genPickler(classLoader, clazz, tag)
+    ???
   """
 
   def computeType[T: c.WeakTypeTag]: Type = {
@@ -345,7 +348,7 @@ trait PicklerMacros extends Macro with PickleMacros with StaticTypeTagMacros {
           import _root_.scala.pickling._
           import _root_.scala.pickling.internal._
           def pickle(picklee: $tpe, builder: _root_.scala.pickling.PBuilder): _root_.scala.Unit = $pickleLogicTree
-          def tag: _root_.scala.pickling.FastTypeTag[$tpe] = $createTagTree
+          def tag: _root_.scala.pickling.StaticTypeTag[$tpe] = $createTagTree
         }
         $picklerName
       }
@@ -424,7 +427,7 @@ trait OpenSumUnpicklerMacro extends Macro with UnpicklerMacros with StaticTypeTa
     q"""
       implicit object $unpicklerName extends _root_.scala.pickling.Unpickler[$tpe] with _root_.scala.pickling.Generated {
         def unpickle(tagKey: String, reader: _root_.scala.pickling.PReader): _root_.scala.Any = $unpickleLogic
-        def tag: _root_.scala.pickling.FastTypeTag[$tpe] = $createTagTree
+        def tag: _root_.scala.pickling.StaticTypeTag[$tpe] = $createTagTree
       }
       $unpicklerName
     """
@@ -623,9 +626,9 @@ trait UnpicklerMacros extends Macro with UnpickleMacros with StaticTypeTagMacros
           // the runtime unpickler if the type is closed, because there's
           // no reason we should ever need to.
           q"""
-            if (tagKey == _root_.scala.pickling.FastTypeTag.Null.key) {
+            if (tagKey == _root_.scala.pickling.StaticTypeTag.Null.key) {
               null
-            } else if (tagKey == _root_.scala.pickling.FastTypeTag.Ref.key) {
+            } else if (tagKey == _root_.scala.pickling.StaticTypeTag.Ref.key) {
               _root_.scala.Predef.implicitly[_root_.scala.pickling.Unpickler[_root_.scala.pickling.refs.Ref]].unpickle(tagKey, reader)
             } else {
               $unpickleObject
@@ -640,9 +643,9 @@ trait UnpicklerMacros extends Macro with UnpickleMacros with StaticTypeTagMacros
           """
 
           q"""
-            if (tagKey == _root_.scala.pickling.FastTypeTag.Null.key) {
+            if (tagKey == _root_.scala.pickling.StaticTypeTag.Null.key) {
               null
-            } else if (tagKey == _root_.scala.pickling.FastTypeTag.Ref.key) {
+            } else if (tagKey == _root_.scala.pickling.StaticTypeTag.Ref.key) {
              _root_.scala.pickling.Defaults.refUnpickler.unpickle(tagKey, reader)
             } else if (tagKey == ${if (tpe <:< typeOf[Singleton]) sym.fullName + ".type" else tpe.key}) {
               $unpickleObject
@@ -670,7 +673,7 @@ trait UnpicklerMacros extends Macro with UnpickleMacros with StaticTypeTagMacros
         import _root_.scala.pickling.ir._
         import _root_.scala.pickling.internal._
         def unpickle(tagKey: _root_.java.lang.String, reader: _root_.scala.pickling.PReader): _root_.scala.Any = $unpickleLogicTree
-        def tag: _root_.scala.pickling.FastTypeTag[$tpe] = $createTagTree
+        def tag: _root_.scala.pickling.StaticTypeTag[$tpe] = $createTagTree
       }
       $unpicklerName
     """
@@ -723,7 +726,7 @@ trait PickleMacros extends Macro with TypeAnalysis {
         val $picklerName = ${createPickler(tpe, builder)}
         $picklerName.asInstanceOf[_root_.scala.pickling.Pickler[$tpe]].pickle($pickleeName, $builder)
       } else {
-        $builder.hintTag(_root_.scala.pickling.FastTypeTag.Null)
+        $builder.hintTag(_root_.scala.pickling.StaticTypeTag.Null)
         _root_.scala.pickling.Defaults.nullPickler.pickle(null, $builder)
       }
     """
