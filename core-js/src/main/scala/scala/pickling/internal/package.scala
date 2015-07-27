@@ -3,15 +3,15 @@ package scala.pickling
 import scala.language.experimental.macros
 import scala.language.reflectiveCalls
 
-import java.util.IdentityHashMap
+import scala.pickling.util.IdentityHashMap
 
 import HasCompat._
 
 package object internal {
 
-  import scala.reflect.runtime.{universe => ru}
-  import ru._
-  import compat._
+  // import scala.reflect.runtime.{universe => ru}
+  // import ru._
+  // import compat._
 
   /* Global reflection lock.
    * It is used to avoid data races that typically lead to runtime exceptions
@@ -20,10 +20,10 @@ package object internal {
    * Note: visibility must be public, so that the lock can be accessed from
    *       macro-generated code.
    */
-  val GRL = new java.util.concurrent.locks.ReentrantLock
+  // val GRL = new java.util.concurrent.locks.ReentrantLock
 
   // TOGGLE DEBUGGING
-  private val debugEnabled: Boolean = System.getProperty("pickling.debug", "false").toBoolean
+  private val debugEnabled: Boolean = false // System.getProperty("pickling.debug", "false").toBoolean
   private[pickling] def debug(output: => String) = if (debugEnabled) println(output)
 
 
@@ -35,11 +35,12 @@ package object internal {
     def isNullable = sym.isClass && !isNotNullable
   }
 
-  var cachedMirror: ru.Mirror = null
-  def currentMirror: ru.Mirror = macro Compat.CurrentMirrorMacro_impl
+  // var cachedMirror: ru.Mirror = null
+  // def currentMirror: ru.Mirror = macro Compat.CurrentMirrorMacro_impl
 
-  private[pickling] def typeToString(tpe: Type): String = tpe.key
+  // private[pickling] def typeToString(tpe: Type): String = tpe.key
 
+/*
   private val typeFromStringCache = scala.collection.concurrent.TrieMap[String, Type]()
   private[pickling] def typeFromString(mirror: Mirror, stpe: String): Type = {
     // TODO: find out why typeFromString is called repeatedly for scala.Predef.String (at least in the evactor1 bench)
@@ -69,7 +70,9 @@ package object internal {
       result
     }
   }
+*/
 
+/*
   // FIXME: duplication wrt Tools, but I don't really fancy abstracting away this path-dependent madness
   private[pickling] implicit class RichTypeFIXME(tpe: Type) {
     import definitions._
@@ -92,11 +95,12 @@ package object internal {
       case _ => false
     }
   }
+*/
 
 
   // ----- utilities for managing object identity -----
   private val pickleesTL = new ThreadLocal[IdentityHashMap[AnyRef, Integer]] {
-    override def initialValue() = new IdentityHashMap[AnyRef, Integer]()
+    override def initialValue() = new IdentityHashMap[AnyRef, Integer]
   }
   private val nextPickleeTL = new ThreadLocal[Int] {
     override def initialValue() = 0
@@ -107,8 +111,8 @@ package object internal {
     // check if `anyRefPicklee` is already in the map.
     // if so, obtain its index, else insert at index `nextPicklee`.
     val picklees = pickleesTL.get()
-    if (picklees.containsKey(anyRefPicklee)) {
-      picklees.get(anyRefPicklee).intValue
+    if (picklees.contains(anyRefPicklee)) {
+      picklees(anyRefPicklee).intValue
     } else {
       val nextPicklee = nextPickleeTL.get()
       picklees.put(anyRefPicklee, new Integer(nextPicklee))
