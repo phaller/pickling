@@ -69,17 +69,14 @@ trait PicklerUnpicklerMacros extends Macro
 trait PicklerMacros extends Macro with PickleMacros with StaticTypeTagMacros {
   import c.universe._
 
-  // val classLoader = this.getClass.getClassLoader
-  // _root_.scala.pickling.StaticTypeTag.mkRaw(clazz, _root_.scala.reflect.runtime.universe.runtimeMirror(classLoader))
-  // _root_.scala.pickling.runtime.RuntimePicklerLookup.genPickler(classLoader, clazz, tag)
   def createRuntimePickler(builder: c.Tree): c.Tree = q"""
-    ???
+    val classLoader = this.getClass.getClassLoader
     _root_.scala.pickling.internal.GRL.lock()
     val tag = try {
-      ???
+      _root_.scala.pickling.StaticTypeTag.mkRaw(clazz, _root_.scala.reflect.runtime.universe.runtimeMirror(classLoader))
     } finally _root_.scala.pickling.internal.GRL.unlock()
     $builder.hintTag(tag)
-    ???
+    _root_.scala.pickling.runtime.RuntimePicklerLookup.genPickler(classLoader, clazz, tag)
   """
 
   def computeType[T: c.WeakTypeTag]: Type = {

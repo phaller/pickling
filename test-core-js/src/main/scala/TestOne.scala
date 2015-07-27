@@ -1,8 +1,9 @@
 import scala.pickling._
 import scala.pickling.json._
 import scala.pickling.pickler._
+import scala.pickling.static._
 
-final case class Person(name: String, age: Int)
+case class Person(name: String, age: Int)
 
 object TestOne extends scala.scalajs.js.JSApp with AllPicklers {
 
