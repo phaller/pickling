@@ -105,6 +105,7 @@ lazy val testCoreJS: Project = (project in file("test-core-js")).
   settings(
     scalaVersion := Util.buildScalaVersion,
     name := "test-scala-pickling-js",
+    scalacOptions ++= Seq("-Xlog-implicits"),
     libraryDependencies ++= {
       val baseDeps = Seq(
         "org.scala-lang" % "scala-reflect" % scalaVersion.value,
