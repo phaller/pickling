@@ -77,6 +77,29 @@ lazy val core: Project = (project in file("core")).
 lazy val testUtil: Project = (project in file("test-util")).
   settings(commonSettings ++ noPublish: _*)
 
+lazy val coreJS: Project = (project in file("core-js")).
+  settings(commonSettings: _*).
+  settings(
+    name := "scala-pickling-js",
+    libraryDependencies ++= {
+      val baseDeps = Seq(
+        "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+        "org.scala-lang" % "scala-compiler" % scalaVersion.value, // for ToolBox
+        "org.scalatest" %%% "scalatest" % "3.0.0-M7" % Test,
+        "org.scalacheck" %%% "scalacheck" % "1.12.4" % Test
+      )
+      val additional = CrossVersion.partialVersion(scalaVersion.value) match {
+        // if scala 2.11+ is used, quasiquotes are merged into scala-reflect
+        case Some((2, scalaMajor)) if scalaMajor >= 11 =>
+          Seq("org.scala-js" %%% "scala-parser-combinators" % "1.0.2")
+        // in Scala 2.10, quasiquotes are provided by macro-paradise
+        case Some((2, 10)) =>
+          Seq(compilerPlugin(macroParadise), quasiquotes)
+      }
+      baseDeps ++ additional
+    }
+  ).enablePlugins(ScalaJSPlugin)
+
 lazy val sandbox: Project = (project in file("sandbox")).
   dependsOn(core).
   settings(commonSettings ++ noPublish: _*).
