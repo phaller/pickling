@@ -22,7 +22,7 @@ trait Pickler[T] {
    */
   def pickle(picklee: T, builder: PBuilder): Unit
   /** The fast type tag associated with this pickler. */
-  def tag: FastTypeTag[T]
+  def tag: StaticTypeTag[T]
 }
 // Shim for Java code.
 abstract class AbstractPickler[T] extends Pickler[T]
@@ -82,7 +82,7 @@ trait Unpickler[T] {
     result
   }
   /** The fast type tag associated with this unpickler. */
-  def tag: FastTypeTag[T]
+  def tag: StaticTypeTag[T]
 }
 // Shim for Java code.
 abstract class AbstractUnpickler[T] extends Unpickler[T]
@@ -99,16 +99,16 @@ object PicklerUnpickler {
     // From Pickler
     override def pickle(picklee: T, builder: PBuilder): Unit = p.pickle(picklee, builder)
     // From Pickler and Unpickler
-    override def tag: FastTypeTag[T] = p.tag
+    override def tag: StaticTypeTag[T] = p.tag
     // From Unpickler
     override def unpickle(tag: String, reader: PReader): Any = u.unpickle(tag, reader)
   }
 }
 
-abstract class AutoRegister[T: FastTypeTag](name: String) extends AbstractPicklerUnpickler[T] {
+abstract class AutoRegister[T: StaticTypeTag](name: String) extends AbstractPicklerUnpickler[T] {
   debug(s"autoregistering pickler $this under key '$name'")
   GlobalRegistry.picklerMap += (name -> (x => this))
-  val tag = implicitly[FastTypeTag[T]]
+  val tag = implicitly[StaticTypeTag[T]]
   debug(s"autoregistering unpickler $this under key '${tag.key}'")
   GlobalRegistry.unpicklerMap += (tag.key -> this)
 }

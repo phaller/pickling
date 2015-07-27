@@ -457,7 +457,7 @@ abstract class Macro extends RichTypes { self =>
 }
 
 case class Hints(
-  tag: FastTypeTag[_] = null,
+  tag: StaticTypeTag[_] = null,
   knownSize: Int = -1,
   isStaticallyElidedType: Boolean = false,
   isDynamicallyElidedType: Boolean = false,
@@ -470,7 +470,7 @@ trait PickleTools {
   protected var hints: List[Hints] = List(Hints())
   def areHintsPinned: Boolean = hints.head.pinned
 
-  def hintTag(tag: FastTypeTag[_]): this.type = {
+  def hintTag(tag: StaticTypeTag[_]): this.type = {
     hints = hints.head.copy(tag = tag) :: hints.tail
     this
   }

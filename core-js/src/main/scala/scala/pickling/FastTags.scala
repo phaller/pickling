@@ -3,9 +3,9 @@ package scala.pickling
 import scala.language.experimental.macros
 
 import scala.pickling.internal._
-import scala.reflect.api.Mirror
+// import scala.reflect.api.Mirror
 
-import scala.reflect.runtime.{universe => ru}
+// import scala.reflect.runtime.{universe => ru}
 import scala.reflect.ClassTag
 
 /**
@@ -22,6 +22,7 @@ import scala.reflect.ClassTag
  *
  * @tparam T
  */
+/*
 trait FastTypeTag[T] extends Equals {
   /** @return The mirror known to be in use when this FastTypeTag was created.
     *
@@ -70,7 +71,9 @@ trait FastTypeTag[T] extends Equals {
   override def hashCode = key.hashCode
   override def toString = "FastTypeTag[" + key + "]"
 }
+*/
 
+/*
 object FastTypeTag {
   implicit def materializeFastTypeTag[T]: FastTypeTag[T] = macro Compat.FastTypeTagMacros_impl[T]
 
@@ -260,7 +263,9 @@ object FastTypeTag {
         sys.error(s"error: could not create FastTypeTag for class '${clazz.getName}'")
     }
 }
+*/
 
+/*
 trait FastTypeTagMacros extends Macro {
   def impl[T: c.WeakTypeTag]: c.Tree = {
     import c.universe._
@@ -292,3 +297,4 @@ trait FastTypeTagMacros extends Macro {
     q"""_root_.scala.pickling.FastTypeTag(_root_.scala.pickling.internal.`package`.currentMirror, $key)"""
   }
 }
+*/

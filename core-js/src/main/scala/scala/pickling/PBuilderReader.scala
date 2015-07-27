@@ -5,7 +5,7 @@ import scala.language.experimental.macros
 import scala.reflect.runtime.universe._
 // TODO - Document this, specifically what pinHints means.
 trait Hintable {
-  def hintTag(tag: FastTypeTag[_]): this.type
+  def hintTag(tag: StaticTypeTag[_]): this.type
   def hintKnownSize(knownSize: Int): this.type
   def hintStaticallyElidedType(): this.type
   def hintDynamicallyElidedType(): this.type

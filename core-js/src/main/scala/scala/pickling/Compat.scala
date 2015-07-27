@@ -62,12 +62,13 @@ object Compat {
     c.Expr[ru.Mirror](bundle.impl)
   }
 
-  def FastTypeTagMacros_impl[T: c.WeakTypeTag](c: Context): c.Expr[FastTypeTag[T]] = {
+  def StaticTypeTagMacros_impl[T: c.WeakTypeTag](c: Context): c.Expr[StaticTypeTag[T]] = {
     val c0: c.type = c
-    val bundle = new { val c: c0.type = c0 } with FastTypeTagMacros
-    c.Expr[FastTypeTag[T]](bundle.impl[T])
+    val bundle = new { val c: c0.type = c0 } with StaticTypeTagMacros
+    c.Expr[StaticTypeTag[T]](bundle.impl[T])
   }
 
+/*
   def FastTypeTagMacros_implClassTag[T: c.WeakTypeTag](c: Context): c.Expr[FastTypeTag[T]] = {
     val c0: c.type = c
     val bundle = new { val c: c0.type = c0 } with FastTypeTagMacros
@@ -79,4 +80,5 @@ object Compat {
     val bundle = new { val c: c0.type = c0 } with FastTypeTagMacros
     c.Expr(bundle.apply(key.tree))
   }
+*/
 }
