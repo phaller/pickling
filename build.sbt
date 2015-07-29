@@ -81,6 +81,7 @@ lazy val coreJS: Project = (project in file("core-js")).
   settings(commonSettings: _*).
   settings(
     name := "scala-pickling-js",
+    scalaJSStage in Global := FastOptStage, // run on Node.js
     libraryDependencies ++= {
       val baseDeps = Seq(
         "org.scala-lang" % "scala-reflect" % scalaVersion.value,
