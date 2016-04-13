@@ -8,9 +8,9 @@ import scala.pickling.internal.{HybridRuntime}
 
 abstract class SDPicklingLogic extends Ops with AllPicklers with BinaryFormats
 
-object SDPicklingProtocol extends {
+object SDPicklingProtocol extends /*{
   val ignoreMe = scala.pickling.internal.replaceRuntime(new HybridRuntime)
-} with SDPicklingLogic {
+} with*/ SDPicklingLogic {
   implicit val so = scala.pickling.static.StaticOnly
 }
 
@@ -34,15 +34,18 @@ case class Req[T](x: Int, y: T) extends Message
 case class Foo[B](b: B)
 
 
+object Picklers {
+  import SDPicklingProtocol._
+
+  val pickler = implicitly[Pickler[Foo[Req[List[String]]]]]
+  val unpickler = implicitly[Unpickler[Foo[Req[List[String]]]]]
+}
+
 class SelfDescribingTest extends FunSuite {
+  import SDPicklingProtocol._
+  import Picklers._
 
   test("SelfDescribing should work") {
-
-    import SDPicklingProtocol._
-
-    val pickler = implicitly[Pickler[Foo[Req[List[String]]]]]
-    val unpickler = implicitly[Unpickler[Foo[Req[List[String]]]]]
-
     println(s"found pickler of class ${pickler.getClass.getName}")
     println(s"found unpickler of class ${unpickler.getClass.getName}")
 
@@ -56,8 +59,5 @@ class SelfDescribingTest extends FunSuite {
     println(res)
 
     assert(res === req)
-
   }
-
 }
-
