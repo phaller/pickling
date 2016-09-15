@@ -45,6 +45,7 @@ object AnyPicklerUnpickler extends AbstractPicklerUnpickler[Any]
     if (reader.atPrimitive) reader.readPrimitive()
     else {
       val actualUnpickler = currentRuntime.picklers.genUnpickler(currentMirror, tag)
+      println(s"AnyPicklerUnpickler using actual unpickler of class: ${actualUnpickler.getClass.getName}")
       actualUnpickler.unpickle(tag, reader)
     }
   }

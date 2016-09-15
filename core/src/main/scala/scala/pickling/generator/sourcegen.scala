@@ -156,7 +156,7 @@ private[pickling] trait SourceGenerator extends Macro with tags.FastTypeTagMacro
     val classLoader = this.getClass.getClassLoader
     _root_.scala.pickling.internal.GRL.lock()
     val tag = try {
-      _root_.scala.pickling.FastTypeTag.makeRaw(clazz)
+      _root_.scala.pickling.FastTypeTag.makeRaw2(clazz)
     } finally _root_.scala.pickling.internal.GRL.unlock()
     _root_.scala.pickling.internal.`package`.currentRuntime.picklers.genPickler(classLoader, clazz, tag)
   """
@@ -430,7 +430,7 @@ private[pickling] trait SourceGenerator extends Macro with tags.FastTypeTagMacro
           implicit object $name extends $picklerUnpicklerType with $generated
               with $picklingPath.AutoRegister[$tpe] {
 
-            override lazy val tag: $picklingPath.FastTypeTag[$tpe] = $createTagTree
+            override def tag: $picklingPath.FastTypeTag[$tpe] = $createTagTree
             override def pickle(picklee: $tpe, builder: $picklingPath.PBuilder): _root_.scala.Unit = $pickleLogic
             override def unpickle(tagKey: _root_.java.lang.String, reader: $picklingPath.PReader): _root_.scala.Any = $unpickleLogic
 

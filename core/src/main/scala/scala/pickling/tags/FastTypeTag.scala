@@ -163,6 +163,32 @@ object FastTypeTag {
    }).asInstanceOf[FastTypeTag[T]]
   }
 
+  def makeRaw2(clazz: Class[_]): FastTypeTag[_] = {
+    // TODO - We should handle "Inner classes".  The only way to know if an inner class is if the constructors require
+    // an outer instance as the first parameter.  That is only a heuristic.
+    rawclassToTagMap.getOrElse(clazz, {
+      if (clazz == null) FastTypeTag.Null
+      else if (clazz.isArray) {
+        val elemClass = clazz.getComponentType()
+        val elemTag = makeRaw(elemClass)
+        mkArrayTag(elemTag)
+      } else {
+        val typeArgs = clazz.getTypeParameters
+        val clazzName0 = clazz.getName()
+        val clazzName =
+            if (clazzName0.endsWith("$")) clazzName0.replace("$", ".type")
+            else if (clazzName0.contains("anonfun$") || clazzName0.contains("$colon$colon") || clazzName0.endsWith("$sp")) clazzName0
+            else clazzName0.replace('$', '.')
+        if (typeArgs.isEmpty) SimpleFastTypeTag(clazzName, Nil)
+        else {
+          // For now just always use `Any`.  Ideally, we'd use some kind of placeholder.
+          val argTags = typeArgs map (i => Any)
+          FastTypeTag(clazzName, argTags.toList)
+        }
+      }
+   })
+  }
+
   // Default tags
   implicit val Any     = FastTypeTag[Any]("scala.Any")
   implicit val Null    = FastTypeTag[Null]("scala.Null")
